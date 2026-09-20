@@ -22,6 +22,15 @@ desktop GUI and support for the latest DaVinci Resolve 21 releases. All the
 reverse engineering, binary patching and tooling is upstream's; this fork adds
 the point-and-click layer and keeps pace with Resolve 21.
 
+**Demo** — see it in action:
+
+https://github.com/user-attachments/assets/2772a6a3-ad08-4917-a5e0-9f742fd6d079
+
+What the demo shows: Wallace automatically detects Resolve in the common
+installation folders — if it lives somewhere unusual, just browse to the
+`resolve` binary yourself. Then hit **Detect**, and **Enable AAC** copies the
+necessary files into place so Resolve can play AAC audio natively.
+
 ## Getting started (GUI)
 
 Grab the AppImage from [Releases](../../releases), make it executable, and run
@@ -42,15 +51,6 @@ Then, inside the GUI:
    in the usual place.
 3. Click **Install**. That's it. `Status` tells you what's patched, and
    **Uninstall** undoes everything, byte-for-byte.
-
-**Demo** — see it in action:
-
-https://github.com/user-attachments/assets/2772a6a3-ad08-4917-a5e0-9f742fd6d079
-
-What the demo shows: Wallace automatically detects Resolve in the common
-installation folders — if it lives somewhere unusual, just browse to the
-`resolve` binary yourself. Then hit **Detect**, and **Enable AAC** copies the
-necessary files into place so Resolve can play AAC audio natively.
 
 ## Or the command line, if that's your thing
 
@@ -158,6 +158,10 @@ This patches Resolve's installed binaries in place. It keeps a verified backup
 and uninstall restores the original byte-for-byte, but a bad patch can still
 break your Resolve installation — **do not use Wallace in production until
 you've tested it on your own setup.**
+
+<p align="center">
+  <img src="gui-v2/assets/logo-source.jpeg" alt="Wallace logo" width="200">
+</p>
 
 [josephg/resolve-aacfix]: https://github.com/josephg/resolve-aacfix
 [e9patch]: https://github.com/GJDuck/e9patch
