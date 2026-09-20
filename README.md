@@ -8,6 +8,10 @@
 >
 > (slightly paraphrased)
 
+<p align="center">
+  <img src="gui-v2/assets/logo-source.jpeg" alt="Wallace logo" width="200">
+</p>
+
 **WALLACE** brings freedom to DaVinci Resolve Studio users on Linux. Not the
 grand, historical kind — the kind where you double-click an `.mp4` and the
 audio actually plays.
@@ -158,10 +162,6 @@ This patches Resolve's installed binaries in place. It keeps a verified backup
 and uninstall restores the original byte-for-byte, but a bad patch can still
 break your Resolve installation — **do not use Wallace in production until
 you've tested it on your own setup.**
-
-<p align="center">
-  <img src="gui-v2/assets/logo-source.jpeg" alt="Wallace logo" width="200">
-</p>
 
 [josephg/resolve-aacfix]: https://github.com/josephg/resolve-aacfix
 [e9patch]: https://github.com/GJDuck/e9patch
