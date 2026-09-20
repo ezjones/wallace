@@ -47,6 +47,11 @@ Then, inside the GUI:
 
 https://github.com/user-attachments/assets/2772a6a3-ad08-4917-a5e0-9f742fd6d079
 
+What the demo shows: Wallace automatically detects Resolve in the common
+installation folders — if it lives somewhere unusual, just browse to the
+`resolve` binary yourself. Then hit **Detect**, and **Enable AAC** copies the
+necessary files into place so Resolve can play AAC audio natively.
+
 ## Or the command line, if that's your thing
 
 The GUI is the primary way to use Wallace, but the same engine ships as a CLI
