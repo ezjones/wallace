@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/wallace.png" alt="Wallace" width="500">
+  <img src="images/wallace.png" alt="Wallace" width="720">
 </p>
 
 # Wallace
@@ -8,15 +8,9 @@
 >
 > (slightly paraphrased)
 
-> ⚠️ **Use at your own risk.** This patches Resolve's installed binaries in
-> place. It keeps a verified backup and `uninstall` restores the original
-> byte-for-byte, but a bad patch can still break your Resolve installation —
-> **do not use it in production until you've tested it on your own setup.**
-
 **WALLACE** brings freedom to DaVinci Resolve Studio users on Linux. Not the
-grand,
-historical kind — the kind where you double-click an `.mp4` and the audio
-actually plays.
+grand, historical kind — the kind where you double-click an `.mp4` and the
+audio actually plays.
 
 Blackmagic ship Resolve with AAC decode removed for licensing reasons, which
 means a great many ordinary `.mp4` and `.mov` files import with silent audio.
@@ -28,6 +22,34 @@ desktop GUI and support for the latest DaVinci Resolve 21 releases. All the
 reverse engineering, binary patching and tooling is upstream's; this fork adds
 the point-and-click layer and keeps pace with Resolve 21.
 
+## Getting started (GUI)
+
+Grab the AppImage from [Releases](../../releases), make it executable, and run
+it:
+
+```sh
+chmod +x Wallace-*.AppImage
+./Wallace-*.AppImage
+```
+
+(`chmod` is only needed the first time — your file manager's "allow executing
+as program" checkbox does the same thing.)
+
+Then, inside the GUI:
+
+1. Close DaVinci Resolve (the patcher can't modify a running binary).
+2. Point Wallace at your Resolve installation — it will find it automatically
+   in the usual place.
+3. Click **Install**. That's it. `Status` tells you what's patched, and
+   **Uninstall** undoes everything, byte-for-byte.
+
+**Demo** — see it in action: [wallace-demo.mov][demo].
+
+## Or the command line, if that's your thing
+
+The GUI is the primary way to use Wallace, but the same engine ships as a CLI
+(`aac-fix`) in the release tarball:
+
 ```sh
 tar -xzf wallace-*.tar.gz
 cd wallace-*
@@ -35,10 +57,8 @@ sudo ./aac-fix install          # close Resolve first
 ./aac-fix status
 ```
 
-Download the tarball from [Releases](../../releases). It needs only `python3`
-and `binutils`; everything else is bundled.
-
-To undo it completely (the English finally catch up):
+It needs only `python3` and `binutils`; everything else is bundled. To undo it
+completely (the English finally catch up):
 
 ```sh
 sudo ./aac-fix uninstall
@@ -64,15 +84,18 @@ not recover from professionally.
 Wallace's whole point is that you never have to: the source media stays
 exactly as the camera delivered it, and Resolve simply learns to read it.
 
-## The GUI
+## Building the GUI from source
 
 ```sh
 cd gui-v2
 npm install
-npm run tauri dev     # or: npm run tauri build
+npm run tauri dev     # or: npm run tauri build (produces the AppImage)
 ```
 
 ## What it does
+
+The below applies to the underlying patcher, which the GUI drives for you —
+it's what both the AppImage and the CLI are actually doing under the hood.
 
 AAC is blocked in two places, and lifting either one alone achieves nothing:
 
@@ -199,6 +222,14 @@ This project's own code is MIT ([`LICENSE`](LICENSE)).
 Nothing here contains any part of DaVinci Resolve. It patches a copy you already
 have.
 
+## ⚠️ Use at your own risk
+
+This patches Resolve's installed binaries in place. It keeps a verified backup
+and uninstall restores the original byte-for-byte, but a bad patch can still
+break your Resolve installation — **do not use Wallace in production until
+you've tested it on your own setup.**
+
 [josephg/resolve-aacfix]: https://github.com/josephg/resolve-aacfix
 [e9patch]: https://github.com/GJDuck/e9patch
 [makeresolvedeb]: https://www.danieltufvesson.com/makeresolvedeb
+[demo]: https://github.com/ezjones/wallace/releases/download/v0.1.0/wallace-demo.mov
