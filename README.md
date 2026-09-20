@@ -117,10 +117,10 @@ The gory details — trampolines, signatures, FFmpeg builds — live in
 
 ## Compatibility
 
-**Wallace is built for DaVinci Resolve Studio 21 on Linux (x86-64).** That's
-what it's tested on, and what it's for. Anything else — different versions,
-the free edition, other platforms — is uncharted water: **use at your own
-risk.**
+**Wallace has only been tested with DaVinci Resolve Studio 21, on Linux
+(x86-64).** That's what it's built for, and what it's for. Anything else —
+different versions, the free edition, other platforms — is uncharted water:
+**use at your own risk.**
 
 - **Works:** `.mp4`, `.mov`, `.m4a`, and `.mkv` files **with a video track**,
   LC-AAC and HE-AAC.
