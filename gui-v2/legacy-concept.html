@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Resolve AAC Fix</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#08090d;
+    --panel:#0e1016;
+    --panel2:#131622;
+    --line:rgba(255,255,255,.08);
+    --line2:rgba(255,255,255,.12);
+    --txt:#eef0f6;
+    --mut:#8b90a5;
+    --mut2:#5d6175;
+    --ok:#2ee6a8; --err:#ff5d6c; --warn:#ffb224;
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:Inter,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex; justify-content:center;
+    padding:48px 20px 80px;
+    position:relative; overflow-x:hidden;
+  }
+  /* refined background: mesh + grid + noise */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-2;
+    background:
+      radial-gradient(600px 400px at 20% 0%, rgba(122,60,255,.18), transparent 70%),
+      radial-gradient(700px 420px at 85% 15%, rgba(0,210,255,.14), transparent 70%),
+      radial-gradient(800px 500px at 50% 110%, rgba(255,45,120,.10), transparent 70%),
+      var(--bg);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:-1; opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(800px 600px at 50% 20%, black 30%, transparent 75%);
+  }
+  .shell{width:min(780px,100%); animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+
+  /* header */
+  .nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px}
+  .brand{display:flex; gap:12px; align-items:center}
+  .mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#1a1e2e,#0c0e16);
+    border:1px solid var(--line2); box-shadow:0 6px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12)}
+  .brand h1{font-size:15px; margin:0; font-weight:700; letter-spacing:-.01em}
+  .brand p{margin:1px 0 0; font-size:12px; color:var(--mut)}
+  .sys{display:flex; gap:8px; align-items:center}
+  .chip{font-size:11.5px; font-weight:600; color:var(--mut); border:1px solid var(--line);
+    background:rgba(255,255,255,.03); padding:6px 10px; border-radius:999px; display:flex; gap:7px; align-items:center}
+  .dotlive{width:7px;height:7px;border-radius:50%;background:var(--ok); box-shadow:0 0 10px var(--ok); animation:blink 2s infinite}
+  @keyframes blink{50%{opacity:.45}}
+
+  /* main panel */
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015));
+    border:1px solid var(--line); border-radius:20px; overflow:hidden;
+    box-shadow:0 24px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.09)}
+  .panel-top{padding:20px 22px 0}
+  .field-label{font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--mut2); margin:0 0 8px}
+  .select-row{display:flex; gap:10px}
+  .select-wrap{flex:1; position:relative}
+  .select-wrap::after{content:"▾"; position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--mut); font-size:12px; pointer-events:none}
+  select{width:100%; appearance:none; background:#080a11; border:1px solid var(--line2);
+    color:var(--txt); border-radius:12px; padding:12px 36px 12px 14px; font-size:13.5px; font-weight:500; outline:none; transition:.2s}
+  select:focus{border-color:rgba(0,210,255,.6); box-shadow:0 0 0 3px rgba(0,210,255,.15)}
+  .btn-ghost{background:rgba(255,255,255,.05); border:1px solid var(--line2); color:var(--txt);
+    border-radius:12px; padding:0 16px; font-size:13px; font-weight:600; cursor:pointer; transition:.18s; white-space:nowrap}
+  .btn-ghost:hover{background:rgba(255,255,255,.09); transform:translateY(-1px)}
+  .btn-ghost:active{transform:none}
+
+  /* diagnostics */
+  .diag{display:grid; grid-template-columns:1.1fr 1.4fr 1.4fr; gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:18px 0 0}
+  @media(max-width:640px){.diag{grid-template-columns:1fr}}
+  .cell{background:var(--panel); padding:14px 16px}
+  .cell h4{margin:0 0 7px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--mut2)}
+  .mono{font-family:"JetBrains Mono",monospace; font-size:13px}
+  .badge{display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600}
+  .bdot{width:8px;height:8px;border-radius:50%}
+  .ok .bdot{background:var(--ok); box-shadow:0 0 12px var(--ok)}
+  .ok{color:var(--ok)} .bad{color:var(--err)} .bad .bdot{background:var(--err); box-shadow:0 0 12px var(--err)}
+  .subline{display:block; margin-top:4px; font-size:12px; color:var(--mut); font-weight:400}
+
+  .warnbar{display:flex; gap:10px; align-items:center; margin:14px 0 0; padding:11px 14px; border-radius:12px;
+    font-size:13px; font-weight:500; border:1px solid transparent; transition:.3s; min-height:20px}
+  .warnbar:empty{display:none}
+  .warnbar.show{background:rgba(255,178,36,.08); border-color:rgba(255,178,36,.28); color:#ffd696}
+
+  /* hero */
+  .hero{padding:30px 22px 10px; text-align:center; position:relative}
+  .hero::before{content:""; position:absolute; left:50%; top:8px; transform:translateX(-50%);
+    width:420px; height:180px; background:radial-gradient(closest-side, rgba(150,80,255,.22), transparent);
+    filter:blur(10px); pointer-events:none}
+  .cta-ring{display:inline-block; position:relative; border-radius:999px; padding:2.5px;
+    background:conic-gradient(from var(--a,0deg), #ff3d81, #ff9a3d, #ffe93d, #3dff8a, #3dd8ff, #6a7bff, #c53dff, #ff3d81);
+    animation:spin 7s linear infinite;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 12px 48px rgba(255,60,150,.28), 0 4px 18px rgba(80,140,255,.25);
+    transition:box-shadow .3s, transform .18s}
+  @property --a { syntax:'<angle>'; initial-value:0deg; inherits:false }
+  @keyframes spin{to{--a:360deg}}
+  .cta-ring:hover{transform:translateY(-2px) scale(1.015);
+    box-shadow:0 0 0 1px rgba(255,255,255,.14), 0 18px 70px rgba(255,60,150,.42), 0 6px 28px rgba(0,210,255,.3)}
+  .cta-ring:active{transform:translateY(0) scale(.985)}
+  .cta-ring.disabled{filter:saturate(.15) brightness(.6); animation-play-state:paused; box-shadow:none; transform:none; cursor:not-allowed}
+  #applyBtn{border:0; border-radius:999px; cursor:pointer; padding:18px 58px;
+    font:800 15px/1 Inter; letter-spacing:.14em; text-transform:uppercase; color:#0b0b12;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 46%),
+      conic-gradient(from var(--a,0deg), #ffb3c8, #ffd6a3, #fff3a3, #b8ffc3, #a3e9ff, #b3b8ff, #e3a3ff, #ffb3c8);
+    animation:spin 7s linear infinite;
+    text-shadow:0 1px 0 rgba(255,255,255,.5);
+    display:flex; align-items:center; gap:10px}
+  #applyBtn:disabled{cursor:not-allowed}
+  #applyBtn svg{width:18px;height:18px}
+  .hero-hint{margin:14px 0 0; font-size:12.5px; color:var(--mut)}
+  .hero-hint b{color:var(--txt); font-weight:600}
+
+  .row-actions{display:flex; gap:10px; justify-content:center; padding:18px 22px 0; flex-wrap:wrap}
+  .btn{border-radius:11px; padding:10px 16px; font:600 13px Inter; cursor:pointer;
+    border:1px solid var(--line2); background:rgba(255,255,255,.04); color:var(--txt);
+    display:inline-flex; align-items:center; gap:8px; transition:.18s}
+  .btn:hover:not(:disabled){background:rgba(255,255,255,.08); transform:translateY(-1px); border-color:rgba(255,255,255,.2)}
+  .btn:disabled{opacity:.35; cursor:not-allowed}
+  .btn svg{width:14px;height:14px; opacity:.8}
+  .btn.primary-ghost{border-color:rgba(46,230,168,.35)}
+  .btn.primary-ghost:hover:not(:disabled){border-color:rgba(46,230,168,.6); box-shadow:0 6px 24px rgba(46,230,168,.15)}
+
+  /* terminal */
+  .termwrap{margin:18px 22px 0; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#06070c}
+  .termbar{display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.015)}
+  .tdot{width:10px;height:10px;border-radius:50%}
+  .termbar span.t{margin-left:6px; font-size:11.5px; color:var(--mut2); font-weight:600; letter-spacing:.06em; text-transform:uppercase}
+  .termbar .right{margin-left:auto; font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mut2)}
+  .pbar{height:2px; background:transparent; position:relative; overflow:hidden; opacity:0; transition:.3s}
+  .busy .pbar{opacity:1}
+  .pbar::after{content:""; position:absolute; inset:0;
+    background:linear-gradient(90deg,#ff3d81,#ff9a3d,#ffe93d,#3dff8a,#3dd8ff,#6a7bff,#c53dff,#ff3d81);
+    background-size:300% 100%; animation:slide 1.1s linear infinite}
+  @keyframes slide{to{background-position:300% 0}}
+  #log{height:210px; overflow:auto; padding:14px 16px; font-family:"JetBrains Mono",monospace; font-size:12.2px; line-height:1.7; color:#c6cadb}
+  #log .g{color:var(--ok)} #log .c{color:#5fd8ff} #log .y{color:var(--warn)} #log .r{color:var(--err)} #log .d{color:var(--mut2)}
+
+  .foot{padding:16px 22px 20px; border-top:1px solid var(--line); margin-top:18px; background:rgba(0,0,0,.22);
+    font-size:12px; line-height:1.6; color:var(--mut)}
+  .foot b{color:var(--txt)}
+
+  canvas#burst{position:fixed; inset:0; pointer-events:none; z-index:50}
+  ::selection{background:rgba(122,60,255,.4)}
+</style>
+</head>
+<body>
+<canvas id="burst"></canvas>
+<div class="shell" id="shell">
+  <div class="nav">
+    <div class="brand">
+      <div class="mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10v4h3l4 4V6l-4 4H3z" fill="#fff"/><path d="M14 9a4 4 0 010 6M16.5 6.5a8 8 0 010 11" stroke="#8b90a5" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div><h1>Resolve AAC Fix</h1><p>DaVinci Resolve Studio 21 &middot; Linux x86-64</p></div>
+    </div>
+    <div class="sys">
+      <div class="chip"><span class="dotlive"></span><span id="sysState">idle</span></div>
+      <div class="chip">v21.x</div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-top">
+      <p class="field-label">Resolve install</p>
+      <div class="select-row">
+        <div class="select-wrap"><select id="rootSel"></select></div>
+        <button class="btn-ghost" id="browseBtn">Browse</button>
+      </div>
+
+      <div class="diag">
+        <div class="cell"><h4>Version</h4><div class="mono" id="vVersion">—</div></div>
+        <div class="cell"><h4>Patch compatibility</h4><div class="badge" id="vCompat"><span class="bdot" style="background:#5d6175"></span><span>checking…</span></div><span class="subline mono" id="vCompatSub"></span></div>
+        <div class="cell"><h4>AAC decoder</h4><div class="badge" id="vStatus"><span class="bdot" style="background:#5d6175"></span><span>checking…</span></div><span class="subline mono" id="vStatusSub"></span></div>
+      </div>
+      <div class="warnbar" id="warn"></div>
+    </div>
+
+    <div class="hero">
+      <div class="cta-ring" id="ctaRing">
+        <button id="applyBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12L13 2z" fill="currentColor"/></svg>
+          <span id="applyLabel">Apply fix</span>
+        </button>
+      </div>
+      <p class="hero-hint" id="heroHint">Purely additive patch &middot; <b>verified backup</b> &middot; one-click restore</p>
+    </div>
+
+    <div class="row-actions">
+      <button class="btn primary-ghost" id="revertBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9M3 5v4h4"/></svg>
+        Restore original</button>
+      <button class="btn" id="recheckBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 3v5h-5"/></svg>
+        Re-check</button>
+      <button class="btn" id="detectBtn" title="same as --detect">{ } JSON</button>
+    </div>
+
+    <div class="termwrap">
+      <div class="termbar">
+        <span class="tdot" style="background:#ff5f57"></span><span class="tdot" style="background:#febc2e"></span><span class="tdot" style="background:#28c840"></span>
+        <span class="t">aac-patch-tree</span><span class="right" id="termMeta">engine · idle</span>
+      </div>
+      <div class="pbar"></div>
+      <div id="log"></div>
+    </div>
+
+    <div class="foot"><b>Licensing note.</b> Blackmagic removed AAC for licensing reasons. Re-enabling it for files you already own is interoperability work on your machine — whether it suits distributed output is your call. <b>Restore original</b> puts every byte back.</div>
+  </div>
+</div>
+
+<script>
+// Backend shim — Tauri: swap with invoke('find_roots'|'inspect'|'apply'|'revert')
+const Backend = {
+  roots:["/opt/resolve","/home/ez/.local/opt/DaVinciResolve"],
+  async find_roots(){return this.roots},
+  async inspect(root){
+    await new Promise(r=>setTimeout(r,550));
+    const patched = root.includes(".local");
+    return {root, version:"21.0.4.0004", compatible:true,
+      compat_detail:"12 / 12 sites located", aac_support:patched?"PATCHED":"ORIGINAL",
+      aac_detail:patched?"aac fourcc → FFmpeg":"aac silent in .mp4/.mov/.m4a/.mkv",
+      backup:patched, writable:root.startsWith("/home"), running:[]};
+  },
+  async *runEngine(action,root){
+    const seq = action==="apply" ? [
+      ["d","$ aac-patch-tree apply --originals keep "+root],
+      ["","locating 12 patch sites … "],["g","OK"],
+      ["","installing trampolines (bin/resolve) … "],["g","OK"],
+      ["","installing libav* replacements (4 sonames) … "],["g","OK"],
+      ["","verifying backup bin/resolve.aac-orig … "],["g","OK"],
+      ["g","done — restart Resolve, AAC audio should decode."],
+    ]:[
+      ["d","$ aac-patch-tree revert "+root],
+      ["","restoring bin/resolve … "],["g","OK"],
+      ["","restoring libs … "],["g","OK"],
+      ["g","done — originals restored byte-for-byte."],
+    ];
+    for(const l of seq){await new Promise(r=>setTimeout(r,240)); yield l;}
+  }
+};
+const $=id=>document.getElementById(id);
+const sel=$("rootSel"), logEl=$("log");
+let info=null,busy=false;
+function setSys(t){$("sysState").textContent=t; $("termMeta").textContent="engine · "+t;}
+function log(t,cls=""){const d=document.createElement("div"); if(cls)d.className=cls; d.textContent=t; logEl.appendChild(d); logEl.scrollTop=1e9;}
+function paint(){
+  const idle=!busy&&info&&!(info.running?.length);
+  const canApply=!!(idle&&info.compatible), canRevert=!!(idle&&info.backup);
+  $("applyBtn").disabled=!canApply;
+  $("ctaRing").classList.toggle("disabled",!canApply);
+  $("applyLabel").textContent = !info?"Apply fix":info.aac_support==="PATCHED"?"Fix applied ✓":busy?"Working…":"Apply fix";
+  $("revertBtn").disabled=!canRevert; $("recheckBtn").disabled=busy;
+  $("shell").classList.toggle("busy",busy); $("panel").classList.toggle("busy",busy);
+  setSys(busy?"working":!info?"idle":info.aac_support==="PATCHED"?"patched":"original");
+  $("heroHint").innerHTML = busy?"Streaming <b>aac-patch-tree</b> output below…"
+    :!info?"Select a Resolve install to begin"
+    :info.running?.length?"<b>Close Resolve first</b> — patching a live process is refused"
+    :!info.compatible?"This build is not recognised — the patcher would refuse cleanly"
+    :info.aac_support==="PATCHED"?"Patched · <b>restore anytime</b>, backup verified"
+    :"Purely additive patch · <b>verified backup</b> · one-click restore";
+}
+function show(i){
+  info=i;
+  $("vVersion").textContent=i.version;
+  const c=$("vCompat"); c.className="badge "+(i.compatible?"ok":"bad");
+  c.innerHTML=`<span class="bdot"></span><span>${i.compatible?"Fits this build":"Not recognised"}</span>`;
+  $("vCompatSub").textContent=i.compat_detail;
+  const s=$("vStatus"); const p=i.aac_support==="PATCHED";
+  s.className="badge "+(p?"ok":"bad");
+  s.innerHTML=`<span class="bdot"></span><span>${p?"AAC enabled":"AAC silent"}</span>`;
+  $("vStatusSub").textContent=i.aac_detail;
+  const w=$("warn"); w.classList.toggle("show",!!i.running?.length);
+  w.textContent=i.running?.length?"Resolve is running — close it before applying or restoring.":"";
+  paint();
+}
+async function refresh(){
+  if(!sel.value)return;
+  busy=true; paint();
+  $("vCompat").innerHTML=`<span class="bdot" style="background:#5d6175"></span><span>checking…</span>`;
+  try{show(await Backend.inspect(sel.value));}catch(e){log("Error: "+e,"r");}
+  busy=false; paint();
+}
+async function act(action){
+  if(!info)return;
+  if(!confirm(action==="apply"?`Apply AAC fix to ${info.root}?\nBackup is kept for restore.`:`Restore originals in ${info.root}?`))return;
+  busy=true; paint(); log("");
+  if(!info.writable)log("elevating via polkit (pkexec) to write "+info.root,"y");
+  for await(const [cls,t] of Backend.runEngine(action,info.root)) log(t,cls);
+  if(action==="apply")burst();
+  busy=false; await refresh();
+}
+// subtle canvas burst (brand colors, no emoji)
+function burst(){
+  const c=$("burst"),x=c.getContext("2d"); c.width=innerWidth; c.height=innerHeight;
+  const colors=["#ff3d81","#ff9a3d","#ffe93d","#3dff8a","#3dd8ff","#6a7bff","#c53dff"];
+  const r=ctaRing.getBoundingClientRect(), ox=r.left+r.width/2, oy=r.top+r.height/2;
+  const ps=Array.from({length:110},()=>({x:ox,y:oy,vx:(Math.random()-.5)*11,vy:(Math.random()-.9)*11,g:.28,s:2+Math.random()*4,col:colors[Math.random()*colors.length|0],l:1}));
+  let f=0; (function t(){x.clearRect(0,0,c.width,c.height); let alive=false;
+    for(const p of ps){if(p.l<=0)continue; alive=true; p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.l-=.012;
+      x.globalAlpha=Math.max(p.l,0); x.fillStyle=p.col; x.fillRect(p.x,p.y,p.s,p.s);}
+    if(alive&&f++<160)requestAnimationFrame(t); else x.clearRect(0,0,c.width,c.height);})();
+}
+$("recheckBtn").onclick=refresh; $("applyBtn").onclick=()=>act("apply");
+$("revertBtn").onclick=()=>act("revert");
+$("detectBtn").onclick=async()=>log(JSON.stringify(await Backend.inspect(sel.value),null,2),"c");
+$("browseBtn").onclick=()=>{const v=prompt("Resolve root (contains bin/ and libs/):","/opt/resolve"); if(!v)return;
+  if(![...sel.options].some(o=>o.value===v)){const o=document.createElement("option");o.value=o.textContent=v;sel.appendChild(o);} sel.value=v; refresh();};
+sel.onchange=refresh;
+(async()=>{const roots=await Backend.find_roots(); sel.innerHTML="";
+  roots.forEach(r=>{const o=document.createElement("option");o.value=o.textContent=r;sel.appendChild(o)});
+  if(roots.length){log("engine ready — "+roots.length+" install(s) found.","d"); refresh();} else log("No Resolve install found — use Browse.","y");
+  paint();})();
+</script>
+</body>
+</html>

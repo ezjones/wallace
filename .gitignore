@@ -1,0 +1,36 @@
+# Built payload -- produced by scripts/dev-setup.sh, shipped in release tarballs.
+/vendor/
+/prebuilt/
+
+# Build scratch
+/_ffmpeg/
+/dist/
+/testdata/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.whl
+*.so
+*.o
+
+# Tool build outputs
+/tools/cov
+/tools/mkvprobe
+
+# Fancy GUI (Tauri + Vite)
+gui-v2/node_modules/
+gui-v2/dist/
+gui-v2/bundle-staging/
+gui-v2/src-tauri/target/
+gui-v2/tsconfig.tsbuildinfo
+
+# Never commit these: they are Blackmagic's, and enormous.
+resolve
+resolve.orig
+*.aac-orig
+*.run
+*.deb
+
+# Demo video: hosted as a release asset, never committed
+/wallace demo.mov

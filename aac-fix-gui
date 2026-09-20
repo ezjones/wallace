@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# aac-fix-gui -- open the AAC Fix window (find Resolve, check it, apply / restore).
+#
+# Needs python3 with Tk.  Most distros package Tk separately from python3, so if
+# it is missing this says exactly what to install instead of a Python traceback.
+#
+HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 is required but was not found." >&2
+    exit 1
+fi
+
+# --detect is headless; everything else opens a window and needs Tk.
+if [ "${1:-}" != "--detect" ] && ! python3 -c 'import tkinter' >/dev/null 2>&1; then
+    . /etc/os-release 2>/dev/null || true
+    case " ${ID:-} ${ID_LIKE:-} " in
+        *" debian "*|*" ubuntu "*) hint="sudo apt install python3-tk" ;;
+        *" fedora "*|*" rhel "*)   hint="sudo dnf install python3-tkinter" ;;
+        *" arch "*)                hint="sudo pacman -S tk" ;;
+        *" suse "*)                hint="sudo zypper install python3-tk" ;;
+        *)                         hint="install the Tk package for python3 from your distro" ;;
+    esac
+    {
+        echo "The window needs Tk for Python, which is not installed."
+        echo "  $hint"
+        echo "Or skip the window and use the command line:  $HERE/aac-fix status | install"
+    } >&2
+    exit 1
+fi
+
+exec python3 "$HERE/gui/aacfix_gui.py" "$@"

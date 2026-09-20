@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@theme {
+  /* system stacks only — no webfonts (a render-blocking @import caused
+     the black screen hang on slow/offline networks) */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+@property --a {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+html, body {
+  background: #000;
+  color: #eef0f6;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* elegant black -> grey stage */
+.stage {
+  background:
+    radial-gradient(900px 480px at 50% -8%, rgba(255,255,255,.09), transparent 65%),
+    radial-gradient(700px 500px at 50% 115%, rgba(255,255,255,.05), transparent 60%),
+    linear-gradient(180deg, #000 0%, #0b0c10 45%, #171a21 100%);
+}
+
+/* CTA shine sweep */
+.cta-shine { position: relative; overflow: hidden; }
+.cta-shine::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: sweep 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sweep {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(120%); }
+}
+
+/* indeterminate loading bar */
+@keyframes scanload {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(320%); }
+}
+
+/* transitions.dev snippets (adapted, MIT-friendly re-implementation) */
+
+/* 1. text-states-swap: blur + y swap on value change */
+.t-swap { display: inline-block; animation: tSwap .38s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes tSwap {
+  from { opacity: 0; filter: blur(6px); transform: translateY(8px); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+/* 2. card-resize: smooth height for log expand */
+.t-resize { transition: height .45s cubic-bezier(.32,.72,0,1), opacity .3s; overflow: hidden; }
+
+/* 3. toast open/close: rise + fade + blur + scale */
+.t-toast-in { animation: toastIn .45s cubic-bezier(.21,1.02,.73,1) both; }
+@keyframes toastIn {
+  from { opacity: 0; filter: blur(6px); transform: translateY(14px) scale(.97); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+
+/* 4. modal open/close */
+.t-modal-in { animation: modalIn .32s cubic-bezier(.32,.72,0,1) both; }
+.t-modal-bg { animation: fadeIn .25s ease both; }
+@keyframes modalIn {
+  from { opacity: 0; filter: blur(8px); transform: translateY(10px) scale(.96); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* 5. error shake */
+.t-shake { animation: shake .4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+/* 6. thinking shimmer (engine working) */
+.t-shimmer {
+  background: linear-gradient(100deg, #8b90a5 30%, #fff 50%, #8b90a5 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* 7. spinner -> success check draw */
+.check-draw { stroke-dasharray: 48; stroke-dashoffset: 48; animation: draw .5s .1s cubic-bezier(.65,0,.45,1) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* blue CTA ring rotation */
+.cta-ring {
+  background: conic-gradient(from var(--a, 0deg),
+    #0d419d, #1f6feb, #5aa9ff, #9ecbff, #1f6feb, #0d419d);
+  animation: spinA 7s linear infinite;
+}
+@keyframes spinA { to { --a: 360deg; } }
+
+/* scanline sweep while Detect runs */
+.scanline {
+  position: absolute; left: 0; right: 0; height: 64px; top: -25%;
+  background: linear-gradient(180deg, transparent,
+    rgba(90,169,255,.14) 40%, rgba(158,203,255,.45) 50%,
+    rgba(90,169,255,.14) 60%, transparent);
+  animation: scanY 1.9s ease-in-out infinite;
+  pointer-events: none; z-index: 5;
+}
+@keyframes scanY {
+  0% { top: -25%; }
+  50% { top: 100%; }
+  100% { top: -25%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-ring, .t-shimmer, .t-swap, .t-toast-in { animation: none !important; }
+}
