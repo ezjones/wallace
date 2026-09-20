@@ -51,10 +51,10 @@ as program" checkbox does the same thing.)
 Then, inside the GUI:
 
 1. Close DaVinci Resolve (the patcher can't modify a running binary).
-2. Click **Detect** — Wallace finds Resolve in the common installation
-   folders, or you can browse to the `resolve` binary yourself.
-3. Click **Enable AAC**. That's it. **Uninstall** undoes everything,
-   byte-for-byte.
+2. **Browse** to the `resolve` binary (Wallace starts in the common
+   installation folders), then click **Detect**.
+3. Check the detected version, then click **Enable AAC**. That's it.
+   **Uninstall** undoes everything, byte-for-byte.
 
 ## Or the command line, if that's your thing
 
