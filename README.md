@@ -43,7 +43,9 @@ Then, inside the GUI:
 3. Click **Install**. That's it. `Status` tells you what's patched, and
    **Uninstall** undoes everything, byte-for-byte.
 
-**Demo** — see it in action: [wallace-demo.mov][demo].
+**Demo** — see it in action:
+
+https://github.com/user-attachments/assets/2772a6a3-ad08-4917-a5e0-9f742fd6d079
 
 ## Or the command line, if that's your thing
 
@@ -155,4 +157,3 @@ you've tested it on your own setup.**
 [josephg/resolve-aacfix]: https://github.com/josephg/resolve-aacfix
 [e9patch]: https://github.com/GJDuck/e9patch
 [makeresolvedeb]: https://www.danieltufvesson.com/makeresolvedeb
-[demo]: https://github.com/ezjones/wallace/releases/download/v0.1.0/wallace-demo.mov
