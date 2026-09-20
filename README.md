@@ -92,6 +92,11 @@ conversion of the master media folder and *you* are the reason the offline
 edit sounds different from the online edit. That is the sort of thing you do
 not recover from professionally.
 
+And even if nobody shoots you: it doesn't *scale*. Converting works for a few
+files. What about hundreds? Thousands? Terabytes of camera originals,
+re-encoded one at a time into duplicate PCM copies that eat storage, drift out
+of sync with the originals, and have to be tracked and relinked forever?
+
 Wallace's whole point is that you never have to: the source media stays
 exactly as the camera delivered it, and Resolve simply learns to read it.
 
