@@ -37,6 +37,16 @@ fn engine(app: &AppHandle) -> PathBuf {
     pkg_root(app).join("aac-patch-tree")
 }
 
+/// The engine runs under the SYSTEM python3, but the AppImage runtime exports
+/// PYTHONHOME for its bundled libpython, which breaks system python (the
+/// engine then dies with "need python3 with capstone/pyelftools"). Drop it.
+fn engine_cmd(app: &AppHandle) -> Command {
+    // Run through bash: resources may lose the exec bit when bundled.
+    let mut cmd = Command::new("bash");
+    cmd.arg(engine(app)).env_remove("PYTHONHOME");
+    cmd
+}
+
 fn is_root(p: &Path) -> bool {
     p.join("bin").join("resolve").is_file() && p.join("libs").is_dir()
 }
@@ -139,9 +149,7 @@ fn running_pids(root: &str) -> Vec<u32> {
 }
 
 fn engine_status(app: &AppHandle, root: &str) -> String {
-    // Run through bash: resources may lose the exec bit when bundled.
-    let out = Command::new("bash")
-        .arg(engine(app))
+    let out = engine_cmd(app)
         .args(["status", root])
         .output();
     let txt = match out {
@@ -297,9 +305,7 @@ fn engine_run(app: AppHandle, action: String, root: String) -> Result<String, St
     // NOTE: for /opt/resolve the process needs write access — run the desktop
     // file / AppImage via pkexec, or launch `gui-v2` itself elevated. The engine
     // deliberately does not escalate on its own (same policy as `aac-fix`).
-    // Run through bash: resources may lose the exec bit when bundled.
-    let out = Command::new("bash")
-        .arg(engine(&app))
+    let out = engine_cmd(&app)
         .args(&args)
         .stdin(Stdio::null())
         .output()
