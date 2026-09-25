@@ -229,7 +229,8 @@ struct Compat {
 #[tauri::command]
 fn inspect_fast(app: AppHandle, root: String) -> InspectFast {
     let status = engine_status(&app, &root);
-    let patched = status.to_uppercase().contains("PATCHED") || status.contains("enabled");
+    // The engine prints "AAC support: ACTIVE" only when binary AND libs are in.
+    let patched = status.eq_ignore_ascii_case("ACTIVE");
     let backup = Path::new(&root).join("bin").join("resolve.aac-orig").exists();
     let writable = Command::new("test")
         .args(["-w", &format!("{root}/bin/resolve")])
