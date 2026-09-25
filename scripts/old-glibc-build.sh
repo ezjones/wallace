@@ -119,6 +119,13 @@ ARGS+=(--user "$(id -u):$(id -g)" -e "HOME=/tmp")
 if [ "$RUNTIME" = podman ] && [ "$(id -u)" -ne 0 ]; then
     ARGS+=(--userns=keep-id)
 fi
+# On an SELinux-enforcing host (Fedora, RHEL) unlabeled bind mounts are denied
+# inside the container: the first thing it runs fails with "Permission denied".
+# Disable confinement for this build container instead of relabeling (:Z) the
+# caller's checkout.
+if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+    ARGS+=(--security-opt label=disable)
+fi
 
 rc=0
 "$RUNTIME" run --rm --platform linux/amd64 \
