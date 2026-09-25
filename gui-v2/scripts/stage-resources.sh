@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# stage-resources.sh — copy the engine payload into gui-v2/bundle-staging/
-# with SONAME symlinks added, so linuxdeploy can resolve bundled .so deps.
+# stage-resources.sh — pack the engine payload into gui-v2/bundle-staging/
+# payload.tar.gz, which the AppImage unpacks into the user cache on first run.
 #
-# Background: prebuilt/ffmpeg-aac ships versioned files only
-# (libavutil.so.58.2.100, no libavutil.so.58 symlink). The release tarball is
-# fine with that, but linuxdeploy deploys dependencies of EVERY elf in the
-# AppDir — including our payload — and fails on the missing SONAME name.
-# We must not touch the repo's prebuilt/ (SHA256SUMS covers it), so we stage
-# a copy with the symlinks added.
+# Why a tarball and not loose resources: linuxdeploy processes EVERY elf in the
+# AppDir — it adds RUNPATHs and strips — which changed vendor/e9patch/*,
+# vendor/aacadd and libcapstone.so.  Their hashes then no longer match
+# SHA256SUMS, and the engine (rightly) refuses to patch with a modified
+# payload.  linuxdeploy does not look inside a tarball.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,18 +15,24 @@ REPO="$GUI/.."
 STAGE="$GUI/bundle-staging"
 
 rm -rf "$STAGE"
-mkdir -p "$STAGE"
-for name in aac-patch-tree aacpatch vendor prebuilt SHA256SUMS; do
-    cp -a "$REPO/$name" "$STAGE/$name"
+mkdir -p "$STAGE/payload"
+P="$STAGE/payload"
+for name in aac-patch-tree aacpatch vendor prebuilt; do
+    cp -a "$REPO/$name" "$P/$name"
 done
+find "$P" \( -name __pycache__ -o -name '*.pyc' \) -prune -exec rm -rf {} +
 
-# libfoo.so.60.3.100 -> real copy as libfoo.so.60 (SONAME).
-# NOTE: real copies, not symlinks — Tauri drops symlinks when copying
-# resources into the bundle, which broke linuxdeploy dependency resolution.
-find "$STAGE" -type f -name '*.so.*.*' | while read -r f; do
-    base="$(basename "$f")"
-    soname="$(printf '%s' "$base" | grep -o '.*\.so\.[0-9][0-9]*')"
-    cp "$f" "$(dirname "$f")/$soname"
-done
+# Same checks and manifest as scripts/make-release.sh: the manifest describes
+# the payload actually shipped (builds are not bit-reproducible, so the
+# committed SHA256SUMS will not match a local build).
+. "$REPO/scripts/versions.sh"
+"$REPO/scripts/check-elf-compat.sh" "$MAX_GLIBC" \
+    "$P/vendor/e9patch/e9patch" "$P/vendor/e9patch/e9tool"
+MAX_GLIBC="$MAX_GLIBC" "$REPO/scripts/check-ffmpeg-libs.sh" "$P/prebuilt/ffmpeg-aac"
+"$REPO/scripts/check-trampoline.sh" "$P/vendor/aacadd"
+( cd "$P" && find vendor prebuilt -type f ! -name SHA256SUMS -print0 \
+    | sort -z | xargs -0 sha256sum > SHA256SUMS )
+( cd "$P" && sha256sum --quiet -c SHA256SUMS )
 
-echo "staged resources in $STAGE"
+tar -czf "$STAGE/payload.tar.gz" -C "$P" .
+echo "staged $STAGE/payload.tar.gz ($(du -h "$STAGE/payload.tar.gz" | cut -f1))"

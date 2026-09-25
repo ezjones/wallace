@@ -9,8 +9,49 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use tauri::{AppHandle, Manager};
 
+/// Bundled (AppImage): the engine payload ships as one `payload.tar.gz`
+/// resource. Loose ELFs would be rewritten by linuxdeploy (RUNPATH, strip),
+/// breaking the payload's SHA256SUMS so the engine refuses to patch. Unpack it
+/// once per build into the user cache dir; the engine re-verifies it anyway.
+fn unpack_payload(app: &AppHandle) -> Option<PathBuf> {
+    let tarball = app.path().resource_dir().ok()?.join("payload.tar.gz");
+    let len = fs::metadata(&tarball).ok()?.len();
+    let cache = app.path().app_cache_dir().ok()?;
+    let dest = cache.join(format!("payload-{}-{len}", app.package_info().version));
+    if dest.join("aac-patch-tree").exists() {
+        return Some(dest);
+    }
+    // Extract beside the destination, then rename: a half-unpacked tree must
+    // never pass the exists() check above.
+    let tmp = cache.join(format!("payload-tmp-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&tmp);
+    fs::create_dir_all(&tmp).ok()?;
+    let ok = Command::new("tar")
+        .arg("-xzf")
+        .arg(&tarball)
+        .arg("-C")
+        .arg(&tmp)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if !ok || fs::rename(&tmp, &dest).is_err() {
+        let _ = fs::remove_dir_all(&tmp);
+        // Lost a race with another instance that finished first.
+        return dest.join("aac-patch-tree").exists().then_some(dest);
+    }
+    Some(dest)
+}
+
 fn pkg_root(app: &AppHandle) -> PathBuf {
-    // Bundled (AppImage): resources live in the resource dir.
+    static PKG: OnceLock<PathBuf> = OnceLock::new();
+    PKG.get_or_init(|| find_pkg_root(app)).clone()
+}
+
+fn find_pkg_root(app: &AppHandle) -> PathBuf {
+    if let Some(dir) = unpack_payload(app) {
+        return dir;
+    }
+    // Loose resources (older bundle layout).
     if let Ok(dir) = app.path().resource_dir() {
         if dir.join("aac-patch-tree").exists() {
             return dir;

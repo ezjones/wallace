@@ -22,13 +22,17 @@ only finds installs, reports state, and shells out to it.
   `inspect_compat`, `engine_run`. Details that matter:
   - Engine resolved from bundled resources (`AppHandle.resource_dir()`),
     executed via `bash` (resources lose +x when bundled).
-  - `check_sites` drops `PYTHONHOME` (AppImage runtime poisons system python3
+  - every python/engine call drops `PYTHONHOME` (AppImage runtime poisons system python3
     → `No module named 'encodings'`), sets `PYTHONPATH` to vendored pylibs,
     runs `ionice -c3 nice -n 10`, caches per binary fingerprint (dev+ino+size+mtime).
   - `resolve_version` streams 8MB chunks with early exit (was: whole 653MB read).
-- `scripts/stage-resources.sh` — stages payload into `bundle-staging/` with
-  **real SONAME file copies** (`libavutil.so.58`, …). Symlinks do NOT survive
-  Tauri's resource copy, and linuxdeploy fatals on the missing SONAME otherwise.
+- `scripts/stage-resources.sh` — packs the engine payload into
+  `bundle-staging/payload.tar.gz` (with the same checks + freshly written
+  SHA256SUMS as `scripts/make-release.sh`). The app unpacks it once into
+  `~/.cache/dev.resolveaacfix.gui/payload-<version>-<size>/` on first use.
+  Loose payload ELFs must NOT be bundled: linuxdeploy adds RUNPATHs and
+  strips them, the manifest no longer verifies, and the engine refuses to patch
+  (this is what broke v0.1.0's Enable AAC).
 - Icons + in-app logo: `assets/logo-source.jpeg` (hooded-knight "AAC" art) →
   `src-tauri/icons/*`, `src/assets/logo.png`.
 - `tauri.conf.json`: `targets: ["appimage"]`, `beforeBundleCommand` runs the
@@ -37,18 +41,15 @@ only finds installs, reports state, and shells out to it.
 ## Reproducible AppImage build
 
 ```sh
-cd gui-v2
-export NO_STRIP=1 \
-  LD_LIBRARY_PATH="$PWD/bundle-staging/prebuilt/ffmpeg-aac:$LD_LIBRARY_PATH"
-npx tauri build
+scripts/dev-setup.sh          # from the repo root: builds vendor/ + prebuilt/
+cd gui-v2 && npm install
+NO_STRIP=1 npx tauri build
 # → src-tauri/target/release/bundle/appimage/Wallace_0.1.0_amd64.AppImage
 ```
 
-Why the env vars (both are load-bearing, build fails without them):
-- `LD_LIBRARY_PATH=…/bundle-staging/prebuilt/ffmpeg-aac` — linuxdeploy
-  honors it when resolving the payload's own `libavutil.so.58` dependency.
-- `NO_STRIP=1` — linuxdeploy's bundled `strip` predates `.relr.dyn` and
-  fatals on modern Fedora system libs.
+Fedora build deps: `webkit2gtk4.1-devel gtk3-devel dbus-devel librsvg2-devel`.
+`NO_STRIP=1` is load-bearing: linuxdeploy's bundled `strip` predates
+`.relr.dyn` and fatals on modern Fedora system libs.
 - Runtime needs: system `libwebkit2gtk-4.1`, `python3`; root/pkexec to write
   `/opt/resolve` (engine never self-escalates, same policy as `aac-fix`).
 

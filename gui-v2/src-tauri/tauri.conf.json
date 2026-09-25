@@ -28,11 +28,7 @@
     "targets": ["appimage"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
     "resources": {
-      "../bundle-staging/aac-patch-tree": "aac-patch-tree",
-      "../bundle-staging/aacpatch": "aacpatch",
-      "../bundle-staging/vendor": "vendor",
-      "../bundle-staging/prebuilt": "prebuilt",
-      "../bundle-staging/SHA256SUMS": "SHA256SUMS"
+      "../bundle-staging/payload.tar.gz": "payload.tar.gz"
     }
   }
 }
